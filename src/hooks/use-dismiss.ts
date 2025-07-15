@@ -81,7 +81,7 @@ interface UseDismissOptions {
 	 * Whether to dismiss the floating element upon pressing outside of the
 	 * floating element.
 	 * If you have another element, like a toast, that is rendered outside the
-	 * floating element's React tree and don't want the floating element to close
+	 * floating element's Solid's tree and don't want the floating element to close
 	 * when pressing it, you can guard the check like so:
 	 * ```jsx
 	 * useDismiss(context, {

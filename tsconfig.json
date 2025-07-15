@@ -1,27 +1,24 @@
 {
+  "include": ["./src", "./stories"],
   "compilerOptions": {
-    "strict": true,
-    "target": "ESNext",
+    "baseUrl": ".",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationDir": "./dist/types",
+    "types": ["node"],
+    "target": "ES2015",
+    "lib": ["DOM", "ESNext"],
     "module": "ESNext",
-    "lib": ["DOM", "DOM.Iterable", "ESNext"],
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "noEmit": true,
-    "isolatedModules": true,
-    "skipLibCheck": true,
-    "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
-    "noUncheckedIndexedAccess": true,
+    "moduleResolution": "Node",
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
-    "types": ["vite/client", "@testing-library/jest-dom"],
-    "baseUrl": ".",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true,
     "paths": {
-      "~/*": [
-        "./src/*"
-      ]
+      "solid-floating-ui": ["src/index.ts"],
+      "solid-floating-ui/*": ["src/*"]
     }
-  },
-  "exclude": ["node_modules", "dist", "./dev"]
+  }
 }

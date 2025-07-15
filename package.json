@@ -1,6 +1,6 @@
 {
   "name": "@empoleon/solid-floating-ui",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -27,7 +27,10 @@
     "prepublishOnly": "npm run build:prod",
     "test": "vitest",
     "lint": "biome lint",
+    "storybook": "storybook dev -p 6006",
     "newchangeset": "yarn exec changeset",
+    "version": "yarn changeset version",
+    "release": "yarn changeset publish",
     "version:dev": "yarn version prerelease",
     "release:dev": "yarn npm publish --tag dev"
   },
@@ -56,6 +59,9 @@
     "@eslint/js": "^9.23.0",
     "@rollup/plugin-commonjs": "^28.0.6",
     "@solidjs/testing-library": "^0.8.10",
+    "@storybook/addon-a11y": "^9.0.15",
+    "@storybook/addon-links": "^9.0.15",
+    "@storybook/addon-vitest": "^9.0.15",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/user-event": "^14.6.1",
     "eslint": "^9.23.0",
@@ -65,6 +71,8 @@
     "rollup": "^4.37.0",
     "rollup-plugin-summary": "^3.0.1",
     "rollup-preset-solid": "^3.0.0",
+    "storybook": "^9.0.15",
+    "storybook-solidjs-vite": "^9.0.2",
     "tslib": "^2.8.1",
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.28.0",
@@ -74,7 +82,8 @@
   },
   "dependencies": {
     "@floating-ui/dom": "1.7.1",
-    "@floating-ui/utils": "0.2.8"
+    "@floating-ui/utils": "0.2.8",
+    "solid-js": "^1.9.7"
   },
   "browser": {},
   "typesVersions": {},

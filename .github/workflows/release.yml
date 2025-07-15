@@ -2,48 +2,47 @@ name: Release
 
 on:
   push:
+    branches:
+      - main
     paths:
       - ".changeset/**"
       - "packages/**"
-    branches:
-      - main
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  workflow_dispatch:
 
 jobs:
   release:
-    name: Release
     runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+
     steps:
-      - name: Checkout branch
+      - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: Install
-        uses: ./.github/composite-actions/install
+      - name: Setup Node & Yarn cache
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          registry-url: https://registry.npmjs.org
+          cache: yarn
+
+      - name: Install deps
+        run: yarn install --immutable
 
       - name: Build
         run: yarn build
 
-      - name: Create release Pull Request or publish to NPM
-        id: changesets
-        uses: changesets/action@v1
-        with:
-          publish: yarn release
-          commit: "ci(changesets): version packages"
-          createGithubReleases: true
+      - name: Publish to npm
+        run: yarn npm publish --access public
         env:
           YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Create @dev release
-        if: steps.changesets.outputs.published != 'true'
+      - name: Create GitHub Release
         run: |
-          git checkout main
-          yarn version:dev
-          yarn release:dev
+          NEW_VER=$(node -p "require('./package.json').version")
+          gh release create "v$NEW_VER" --notes "Manual release v$NEW_VER"
         env:
-          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
