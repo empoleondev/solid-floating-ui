@@ -1,8 +1,8 @@
 {
   "name": "@empoleon/solid-floating-ui",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "type": "module",
-  "main": "./dist/esm/index.js",
+  "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/types/index.d.ts",
   "files": [
@@ -14,12 +14,13 @@
   "exports": {
     ".": {
       "types": "./dist/types/index.d.ts",
-      "import": "./dist/esm/index.js"
+      "import": "./dist/index.js"
     }
   },
   "scripts": {
-    "build": "yarn clean && rollup -c --no-sourcemap",
-    "build:prod": "rollup -c --no-sourcemap",
+    "build:types": "tsc --emitDeclarationOnly -p tsconfig.build.json",
+    "build:js": "rollup -c --no-sourcemap",
+    "build": "yarn clean && yarn build:types && yarn build:js",
     "clean": "rimraf ./dist",
     "prepublishOnly": "npm run build:prod",
     "test": "vitest",
