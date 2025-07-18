@@ -35,14 +35,57 @@ jobs:
       - name: Build
         run: yarn build
 
+      - name: Check if version exists on npm
+        id: check_version
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          VERSION=${{ steps.version.outputs.version }}
+          
+          # Check if the version exists
+          if npm view "$PACKAGE_NAME@$VERSION" version > /dev/null 2>&1; then
+            echo "Version $VERSION already exists on npm"
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "Version $VERSION does not exist on npm"
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Publish to npm
+        if: steps.check_version.outputs.exists == 'false'
         run: yarn npm publish --access public
         env:
           YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Create GitHub Release
+      - name: Get version
+        id: version
         run: |
-          NEW_VER=$(node -p "require('./package.json').version")
-          gh release create "v$NEW_VER" --notes "Manual release v$NEW_VER"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Grab the version into a shell variable
+          version=$(node -p "require('./package.json').version")
+          # Append it correctly into GITHUB_OUTPUT
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: Read changelog file
+        id: notes
+        run: |
+          FILE="changelog/${{ steps.version.outputs.version }}.md"
+          if [ ! -f "$FILE" ]; then
+            echo "⚠️ Changelog file not found: $FILE" >&2
+            exit 1
+          fi
+          # URL-encode the markdown
+          NOTES_ENCODED=$(python3 -c \
+            "import urllib.parse,sys;print(urllib.parse.quote(sys.stdin.read()))" \
+            < "$FILE")
+          echo "notes=$NOTES_ENCODED" >> $GITHUB_OUTPUT
+
+      - name: Install new-github-release-url
+        run: yarn add new-github-release-url
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
+          body_path: changelog/${{ steps.version.outputs.version }}.md
+          draft: false
+          prerelease: false
