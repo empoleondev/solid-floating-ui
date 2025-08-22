@@ -45,8 +45,9 @@ interface UseClickOptions {
 	keyboardHandlers?: boolean;
 }
 
-function isButtonTarget(event: KeyboardEvent) {
-	return isHTMLElement(event.target) && event.target.tagName === "BUTTON";
+function hasNativeClickBehavior(event: KeyboardEvent) {
+  return isHTMLElement(event.target) && 
+         (event.target.tagName === "BUTTON" || event.target.tagName === "A");
 }
 
 function isSpaceIgnored(element: Element | null) {
@@ -140,13 +141,14 @@ function useClick(
 					if (
 						event.defaultPrevented ||
 						!keyboardHandlers ||
-						isButtonTarget(event)
+						hasNativeClickBehavior(event)
 					) {
 						return;
 					}
 
           // only treat it as “space click” if reference is a real HTMLElement
-          const el = isHTMLElement(reference) ? reference : null;
+        //   const el = isHTMLElement(reference) ? reference : null;
+		const el = isHTMLElement(event.target) ? event.target : null;
 
 					if (event.key === " " && !isSpaceIgnored(el)) {
 						// Prevent scrolling
@@ -165,12 +167,14 @@ function useClick(
 					}
 				},
 				onKeyUp: (event: KeyboardEvent) => {
-          const el = isHTMLElement(reference) ? reference : null;
+        //   const el = isHTMLElement(reference) ? reference : null;
+		const el = isHTMLElement(event.target) ? event.target : null;
+
 
 					if (
 						event.defaultPrevented ||
 						!keyboardHandlers ||
-						isButtonTarget(event) ||
+						hasNativeClickBehavior(event) ||
 						isSpaceIgnored(el)
 					) {
 						return;

@@ -1,15 +1,181 @@
-// FloatingDelayGroup.solid.tsx
-/* eslint-disable solid/reactivity */
+// import {
+//   Accessor,
+//   JSX,
+//   createContext,
+//   createEffect,
+//   createSignal,
+//   onCleanup,
+//   useContext,
+// } from 'solid-js';
+
+// import { getDelay } from '../hooks/use-hover';
+// import type { FloatingContext } from '../hooks/use-floating';
+
+// type Delay = number | Partial<{ open: number; close: number }>;
+
+// interface GroupState {
+//   delay: Delay;
+//   initialDelay: Delay;
+//   currentId: string | null;
+//   timeoutMs: number;
+//   isInstantPhase: boolean;
+// }
+
+// interface GroupContext extends GroupState {
+//   setState: (partial: Partial<GroupState>) => void;
+//   setCurrentId: (id: string | null) => void;
+// }
+
+// const FloatingDelayGroupContext = createContext<GroupContext>({
+//   delay: 0,
+//   initialDelay: 0,
+//   currentId: null,
+//   timeoutMs: 0,
+//   isInstantPhase: false,
+//   setState: () => undefined,
+//   setCurrentId: () => undefined,
+// });
+
+// export const useDelayGroupContext = () => useContext(FloatingDelayGroupContext);
+
+// export interface FloatingDelayGroupProps {
+//   children?: JSX.Element;
+//   delay: Delay;
+//   timeoutMs?: number;
+// }
+
+// export const FloatingDelayGroup = (props: FloatingDelayGroupProps): JSX.Element => {
+//   const initial = props.delay;
+//   const [delay, setDelay] = createSignal<Delay>(initial);
+//   const [initialDelay] = createSignal<Delay>(initial);
+//   const [currentId, setCurrentIdSignal] = createSignal<string | null>(null);
+//   const [isInstantPhase, setIsInstantPhase] = createSignal(false);
+
+//   let resetTimeoutId: number | null = null;
+
+//   const scheduleReset = () => {
+//     if (resetTimeoutId != null) {
+//       clearTimeout(resetTimeoutId);
+//       resetTimeoutId = null;
+//     }
+
+//     const ms = props.timeoutMs ?? 600;
+//     if (ms > 0) {
+//       resetTimeoutId = window.setTimeout(() => {
+//         if (currentId() === null) {
+//           setDelay(initialDelay());
+//           setIsInstantPhase(false);
+//         }
+//         resetTimeoutId = null;
+//       }, ms);
+//     } else {
+//       setDelay(initialDelay());
+//       setIsInstantPhase(false);
+//     }
+//   };
+
+//   const setState = (partial: Partial<GroupState>) => {
+//     if (partial.delay !== undefined) {
+//       setDelay(partial.delay as Delay);
+//     }
+//     if (partial.currentId !== undefined) {
+//       setCurrentId(partial.currentId as string | null);
+//     }
+//     if (partial.timeoutMs !== undefined) {
+//       // no signal for timeoutMs; it's taken from props but we allow callers to mimic changes by scheduling reset
+//       // (most callers don't need to change timeoutMs at runtime)
+//     }
+//     if (partial.isInstantPhase !== undefined) {
+//       setIsInstantPhase(Boolean(partial.isInstantPhase));
+//     }
+//   };
+
+//   const setCurrentId = (id: string | null) => {
+//     if (resetTimeoutId != null) {
+//       clearTimeout(resetTimeoutId);
+//       resetTimeoutId = null;
+//     }
+
+//     const prev = currentId();
+//     setCurrentIdSignal(id);
+
+//     if (id !== null) {
+//       if (!isInstantPhase()) {
+//         setIsInstantPhase(true);
+
+//         const instantDelay = {
+//           open: 0,
+//           close: getDelay(initialDelay(), 'close'),
+//         } as Delay;
+//         setDelay(instantDelay);
+//       }
+//     } else {
+//       scheduleReset();
+//     }
+//   };
+
+//   onCleanup(() => {
+//     if (resetTimeoutId != null) {
+//       clearTimeout(resetTimeoutId);
+//       resetTimeoutId = null;
+//     }
+//   });
+
+//   const context: GroupContext = {
+//     get delay() { return delay(); },
+//     get initialDelay() { return initialDelay(); },
+//     get currentId() { return currentId(); },
+//     get timeoutMs() { return props.timeoutMs ?? 600; },
+//     get isInstantPhase() { return isInstantPhase(); },
+//     setState,
+//     setCurrentId,
+//   };
+
+//   return (
+//     <FloatingDelayGroupContext.Provider value={context}>
+//       {props.children}
+//     </FloatingDelayGroupContext.Provider>
+//   );
+// };
+
+// export const useDelayGroup = (
+//   floatingContext: Accessor<FloatingContext>,
+//   options: { id: string }
+// ) => {
+//   const group = useDelayGroupContext();
+//   let wasOpen = false;
+
+//   createEffect(() => {
+//     const ctx = floatingContext();
+//     const isOpen = !!ctx.open;
+
+//     if (isOpen && !wasOpen) {
+//       if (group.currentId !== options.id) {
+//         group.setCurrentId(options.id);
+//       }
+//     }
+
+//     if (!isOpen && wasOpen) {
+//       if (group.currentId === options.id) {
+//         group.setCurrentId(null);
+//       }
+//     }
+
+//     wasOpen = isOpen;
+//   });
+
+//   return group;
+// };
+
 import {
   Accessor,
   JSX,
   createContext,
   createEffect,
-  mergeProps,
+  createSignal,
   onCleanup,
   useContext,
 } from 'solid-js';
-import { createStore } from 'solid-js/store';
 
 import { getDelay } from '../hooks/use-hover';
 import type { FloatingContext } from '../hooks/use-floating';
@@ -19,14 +185,14 @@ type Delay = number | Partial<{ open: number; close: number }>;
 interface GroupState {
   delay: Delay;
   initialDelay: Delay;
-  currentId: any;
+  currentId: string | null;
   timeoutMs: number;
   isInstantPhase: boolean;
 }
 
 interface GroupContext extends GroupState {
   setState: (partial: Partial<GroupState>) => void;
-  setCurrentId: (id: any) => void;
+  setCurrentId: (id: string | null) => void;
 }
 
 const FloatingDelayGroupContext = createContext<GroupContext>({
@@ -47,45 +213,93 @@ export interface FloatingDelayGroupProps {
   timeoutMs?: number;
 }
 
-/**
- * Provides context for a group of floating elements that should share a
- * `delay`.
- */
-export const FloatingDelayGroup = (
-  props: FloatingDelayGroupProps
-): JSX.Element => {
-  const [state, setState] = createStore<GroupState>({
-    delay: props.delay,
-    initialDelay: props.delay,
-    currentId: null,
-    timeoutMs: props.timeoutMs ?? 0,
-    isInstantPhase: false,
-  });
+export const FloatingDelayGroup = (props: FloatingDelayGroupProps): JSX.Element => {
+  const initial = props.delay;
+  const [delay, setDelay] = createSignal<Delay>(initial);
+  const [initialDelay] = createSignal<Delay>(initial);
+  const [currentId, setCurrentIdSignal] = createSignal<string | null>(null);
+  const [isInstantPhase, setIsInstantPhase] = createSignal(false);
 
-  let initialCurrentIdRef: any = null;
+  let resetTimeoutId: number | null = null;
 
-  const setCurrentId = (id: any) => {
-    setState({ currentId: id });
+  const scheduleReset = () => {
+    if (resetTimeoutId != null) {
+      clearTimeout(resetTimeoutId);
+      resetTimeoutId = null;
+    }
+
+    const ms = props.timeoutMs ?? 600;
+    if (ms > 0) {
+      resetTimeoutId = window.setTimeout(() => {
+        if (currentId() === null) {
+          setDelay(initialDelay());
+          setIsInstantPhase(false);
+        }
+        resetTimeoutId = null;
+      }, ms);
+    } else {
+      setDelay(initialDelay());
+      setIsInstantPhase(false);
+    }
   };
 
-  // Mirror React’s useModernLayoutEffect for tracking `isInstantPhase` & `currentId`
-  createEffect(() => {
-    if (state.currentId) {
-      if (initialCurrentIdRef === null) {
-        initialCurrentIdRef = state.currentId;
-      } else if (!state.isInstantPhase) {
-        setState({ isInstantPhase: true });
+  const setState = (partial: Partial<GroupState>) => {
+    if (partial.delay !== undefined) {
+      setDelay(partial.delay as Delay);
+    }
+    if (partial.currentId !== undefined) {
+      setCurrentId(partial.currentId as string | null);
+    }
+    if (partial.timeoutMs !== undefined) {
+      // no signal for timeoutMs; it's taken from props but we allow callers to mimic changes by scheduling reset
+      // (most callers don't need to change timeoutMs at runtime)
+    }
+    if (partial.isInstantPhase !== undefined) {
+      setIsInstantPhase(Boolean(partial.isInstantPhase));
+    }
+  };
+
+  const setCurrentId = (id: string | null) => {
+    
+    if (resetTimeoutId != null) {
+      clearTimeout(resetTimeoutId);
+      resetTimeoutId = null;
+    }
+
+    const prev = currentId();
+    setCurrentIdSignal(id);
+
+    if (id !== null) {
+      if (!isInstantPhase()) {
+        setIsInstantPhase(true);
+
+        const instantDelay = {
+          open: 0,
+          close: getDelay(initialDelay(), 'close'),
+        } as Delay;
+        setDelay(instantDelay);
       }
     } else {
-      if (state.isInstantPhase) {
-        setState({ isInstantPhase: false });
-      }
-      initialCurrentIdRef = null;
+      scheduleReset();
+    }
+  };
+
+  onCleanup(() => {
+    if (resetTimeoutId != null) {
+      clearTimeout(resetTimeoutId);
+      resetTimeoutId = null;
     }
   });
 
-  // Build a stable context object (including both setState and setCurrentId)
-  const context = mergeProps({ setState, setCurrentId }, state);
+  const context: GroupContext = {
+    get delay() { return delay(); },
+    get initialDelay() { return initialDelay(); },
+    get currentId() { return currentId(); },
+    get timeoutMs() { return props.timeoutMs ?? 600; },
+    get isInstantPhase() { return isInstantPhase(); },
+    setState,
+    setCurrentId,
+  };
 
   return (
     <FloatingDelayGroupContext.Provider value={context}>
@@ -94,68 +308,40 @@ export const FloatingDelayGroup = (
   );
 };
 
-interface UseGroupOptions {
-  id: any;
-}
-
-/**
- * Enables grouping when called inside a component that's a child of a
- * `FloatingDelayGroup`.
- */
 export const useDelayGroup = (
   floatingContext: Accessor<FloatingContext>,
-  props: UseGroupOptions
+  options: { id: string }
 ) => {
   const group = useDelayGroupContext();
+  let wasOpen = false;
 
-  // 1. Add this effect to handle OPENING a tooltip
   createEffect(() => {
-    if (floatingContext().open) {
-      // When this tooltip opens, it immediately sets the fast-opening delay
-      // for the rest of the group.
-      group.setState({
-        delay: {
-          open: 1,
-          close: getDelay(group.initialDelay, 'close'),
-        },
-      });
-      // It also sets itself as the "current" active tooltip.
-      group.setCurrentId(props.id);
-    }
-  });
+    const ctx = floatingContext();
+    const isOpen = !!ctx.open;
 
-  // 2. Add this effect to handle CLOSING OTHER tooltips
-  createEffect(() => {
-    const currentId = group.currentId;
-    // This runs for all tooltips. If an active tooltip exists (`currentId`)
-    // and it's not me (`currentId !== props.id`), I should close.
-    if (currentId && currentId !== props.id) {
-      floatingContext().onOpenChange(false);
-    }
-  });
-
-  // 3. Add this effect to handle the group TIMEOUT AND RESET
-  createEffect(() => {
-    // When the currently active tooltip closes...
-    if (!floatingContext().open && group.currentId === props.id) {
-      const unset = () => {
-        // ...reset the group state back to the initial slow delay.
-        // The check ensures we don't accidentally reset if another
-        // tooltip became active during the timeout period.
-        if (group.currentId === props.id) {
-          group.setState({ delay: group.initialDelay, currentId: null });
-        }
-      };
-
-      // Use the timeout if provided, otherwise reset instantly.
-      if (group.timeoutMs > 0) {
-        const t = window.setTimeout(unset, group.timeoutMs);
-        onCleanup(() => {
-          clearTimeout(t);
-        });
-      } else {
-        unset();
+    if (isOpen && !wasOpen) {
+      if (group.currentId !== options.id) {
+        group.setCurrentId(options.id);
       }
+    }
+
+    if (!isOpen && wasOpen) {
+      if (group.currentId === options.id) {
+        group.setCurrentId(null);
+      }
+    }
+
+    wasOpen = isOpen;
+  });
+
+  // Create a reactive effect that closes this tooltip when another becomes current
+  createEffect(() => {
+    const ctx = floatingContext();
+    const currentId = group.currentId;
+    
+    // If this tooltip is open but another tooltip is now the current one, close this one
+    if (ctx.open && currentId !== options.id && currentId !== null) {
+      ctx.onOpenChange(false, undefined, "hover");
     }
   });
 

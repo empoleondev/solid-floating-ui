@@ -76,6 +76,8 @@ interface UseHoverOptions {
 }
 
 const safePolygonIdentifier = createAttribute("safe-polygon");
+const MOVEMENT_THRESHOLD = 5; // Movement threshold in pixels
+
 
 export function getDelay(
 	value: UseHoverOptions["delay"],
@@ -90,18 +92,17 @@ export function getDelay(
 		return value;
 	}
 
-	return value?.[prop];
+	const result = value?.[prop];
+	return result;
 }
 
 function useHover(
 	context: () => FloatingContext,
 	options: () => UseHoverOptions = () => ({}),
 ): () => ElementProps {
-  const memoizedOptions = createMemo(options);
-
 	return createMemo(() => {
 		const ctx = context();
-		const opts = options();
+		const opts = options(); // This needs to be reactive - called every time
 
 		const {
 			open,
@@ -118,10 +119,8 @@ function useHover(
 			restMs = 0,
 			move = true,
 			handleClose = null,
-		} = memoizedOptions();
+		} = opts;
 
-		// const tree = useFloatingTree();
-		// const parentId = useFloatingParentNodeId();
 		let pointerType: string | undefined = undefined;
 		let timeout = -1;
 		let handler: ((event: MouseEvent) => void) | undefined = undefined;
@@ -184,11 +183,14 @@ function useHover(
 			runElseBranch = true,
 			reason: OpenChangeReason = "hover",
 		) => {
-			const closeDelay = getDelay(memoizedOptions().delay, "close", pointerType);
+			const currentDelay = options().delay || 0;
+			const closeDelay = getDelay(currentDelay, "close", pointerType);
 			if (closeDelay && !handler) {
 				clearTimeout(timeout);
 				timeout = window.setTimeout(
-					() => onOpenChange(false, event, reason),
+					() => {
+						onOpenChange(false, event, reason);
+					},
 					closeDelay,
 				);
 			} else if (runElseBranch) {
@@ -269,43 +271,48 @@ function useHover(
 					return {};
 				}
 
+
 				const onmouseenter = (event: MouseEvent) => {
+					const currentDelay = options().delay || 0;
 					clearTimeout(timeout);
 					blockMouseMove = false;
 
 					if (
 						(mouseOnly && !isMouseLikePointerType(pointerType)) ||
-						(restMs > 0 && !getDelay(delay, "open"))
+						(restMs > 0 && !getDelay(currentDelay, "open"))
 					) {
 						return;
 					}
 
-					const openDelay = getDelay(memoizedOptions().delay, "open", pointerType);
+					const openDelay = getDelay(currentDelay, "open", pointerType);
 
 					if (openDelay) {
 						timeout = window.setTimeout(() => {
-							onOpenChange(true, event, "hover");
-						}, openDelay);
-					} else {
-						onOpenChange(true, event, "hover");
-					}
+            const currentRef = ctx.elements.reference;
+            if (currentRef && document.contains(currentRef as Node)) {
+              onOpenChange(true, event, "hover");
+            }
+          }, openDelay);
+			} else {
+				onOpenChange(true, event, "hover");
+			}
 				};
 
-				return {
+				const handlers = {
 					onpointerdown: (event: PointerEvent) => {
 						pointerType = event.pointerType;
 					},
 					onpointerenter: (event: PointerEvent) => {
 						pointerType = event.pointerType;
 					},
-					onmouseenter,
+					onmouseenter,					
 					onmousemove: (event: MouseEvent) => {
 						if (move) {
 							onmouseenter(event);
 						}
 						function handleMouseMove() {
 							if (!blockMouseMove) {
-								onOpenChange(true, event, "hover");
+							onOpenChange(true, event, "hover");
 							}
 						}
 
@@ -317,12 +324,25 @@ function useHover(
 							return;
 						}
 
-						clearTimeout(restTimeout);
-
 						if (pointerType === "touch") {
+							clearTimeout(restTimeout);
 							handleMouseMove();
-						} else {
+							return;
+						}
+
+						const movementX = Math.abs(event.movementX || 0);
+						const movementY = Math.abs(event.movementY || 0);
+						const totalMovement = Math.sqrt(movementX * movementX + movementY * movementY);
+						
+						// Only reset the timer if movement is significant
+						if (totalMovement >= MOVEMENT_THRESHOLD) {
+							clearTimeout(restTimeout);
 							restTimeout = window.setTimeout(handleMouseMove, restMs);
+						} else {
+							// For minor movement, don't reset the timer but ensure one is set if none exists
+							if (restTimeout === -1) {
+							restTimeout = window.setTimeout(handleMouseMove, restMs);
+							}
 						}
 					},
 					onmouseleave: (event: MouseEvent) => {
@@ -333,14 +353,12 @@ function useHover(
 							clearTimeout(restTimeout);
 
 							if (handleClose) {
-								// Prevent clearing `onScrollMouseLeave` timeout.
 								if (!open) {
 									clearTimeout(timeout);
 								}
 
 								handler = handleClose({
 									...ctx,
-									// tree,
 									x: event.clientX,
 									y: event.clientY,
 									onClose() {
@@ -387,6 +405,8 @@ function useHover(
 						}
 					},
 				};
+
+				return handlers;
 			},
 
 			get floating() {

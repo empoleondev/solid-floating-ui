@@ -64,7 +64,6 @@ export function UseInteraction() {
                   class="menu-item"
                   style="display: block; width: 100%; text-align: left; padding: 0.5rem 1rem; font-size: 0.875rem; line-height: 1.25rem; color: #374151; border: none; background: transparent; cursor: pointer;"
                   onClick={() => {
-                    console.log(item);
                     setIsOpen(false);
                   }}
                 >
