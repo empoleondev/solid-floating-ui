@@ -35,6 +35,14 @@ jobs:
       - name: Build
         run: yarn build
 
+      - name: Get version
+        id: version
+        run: |
+          # Grab the version into a shell variable
+          version=$(node -p "require('./package.json').version")
+          # Append it correctly into GITHUB_OUTPUT
+          echo "version=$version" >> $GITHUB_OUTPUT
+
       - name: Check if version exists on npm
         id: check_version
         run: |
@@ -55,14 +63,6 @@ jobs:
         run: yarn npm publish --access public
         env:
           YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Get version
-        id: version
-        run: |
-          # Grab the version into a shell variable
-          version=$(node -p "require('./package.json').version")
-          # Append it correctly into GITHUB_OUTPUT
-          echo "version=$version" >> $GITHUB_OUTPUT
 
       - name: Read changelog file
         id: notes
@@ -89,3 +89,4 @@ jobs:
           body_path: changelog/${{ steps.version.outputs.version }}.md
           draft: false
           prerelease: false
+          
