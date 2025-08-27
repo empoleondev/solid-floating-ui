@@ -18,51 +18,6 @@ afterEach(() => {
 });
 
 describe('positionReference', () => {
-  // test('sets separate refs', () => {
-  //   function App() {
-  //     const [reference, setReference] = createSignal<HTMLDivElement | null>(null);
-  //     const [positionReference, setPositionReference] = createSignal<HTMLDivElement | null>(null);
-  //     const [floating, setFloating] = createSignal<HTMLDivElement | null>(null);
-      
-  //     const floatingState = useFloating({
-  //       elements: () => ({
-  //         reference: reference(),
-  //         floating: floating()
-  //       })
-  //     });
-
-  //     // Set position reference separately
-  //     createEffect(() => {
-  //       const posRef = positionReference();
-  //       if (posRef && floatingState.context?.elements) {
-  //         // Update the elements directly on the context
-  //         floatingState.context.elements.reference = posRef;
-  //       }
-  //     });
-
-  //     return (
-  //       <>
-  //         <div ref={setReference} data-testid="reference" />
-  //         <div ref={setPositionReference} data-testid="position-reference" />
-  //         <div data-testid="reference-text">
-  //           {String(reference()?.getAttribute('data-testid') || '')}
-  //         </div>
-  //         <div data-testid="position-reference-text">
-  //           {String(!!positionReference())}
-  //         </div>
-  //       </>
-  //     );
-  //   }
-
-  //   render(() => <App />);
-
-  //   expect(screen.getByTestId('reference-text').textContent).toBe('reference');
-  //   expect(screen.getByTestId('position-reference-text').textContent).toBe('true');
-
-  //   // In SolidJS, the component is reactive by default, no rerender needed
-  //   expect(screen.getByTestId('reference-text').textContent).toBe('reference');
-  //   expect(screen.getByTestId('position-reference-text').textContent).toBe('true');
-  // });
   test('sets separate refs', () => {
     function App() {
       const [reference, setReference] = createSignal<HTMLDivElement | null>(null);
