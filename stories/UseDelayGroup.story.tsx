@@ -129,7 +129,7 @@ function Tooltip({ children, content, useDelayGroup: shouldUseDelayGroup = true 
     hover(),
     focus(),
     dismiss,
-    role,
+    role(),
   ]);
 
   return (

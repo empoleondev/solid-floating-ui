@@ -1,6 +1,6 @@
 import { expect, test, describe, afterEach } from 'vitest';
 import { fireEvent, render, screen, cleanup } from '@solidjs/testing-library';
-import { createSignal } from 'solid-js';
+import { createMemo, createSignal } from 'solid-js';
 
 import {
   useClick,
@@ -35,13 +35,13 @@ function App(props: UseRoleOptions & {
   }
 
   const role = useRole(floatingState.context, roleProps);
-  const interactions = useInteractions([role]);
+  const interactions = createMemo(() => useInteractions([role()]));
 
   return (
     <>
       <button
         ref={setReference}
-        {...interactions.getReferenceProps({
+        {...interactions().getReferenceProps({
           ...(referenceId && { id: referenceId }),
           onClick() {
             setOpen(!open());
@@ -51,7 +51,7 @@ function App(props: UseRoleOptions & {
       {open() && (
         <div
           ref={setFloating}
-          {...interactions.getFloatingProps({
+          {...interactions().getFloatingProps({
             ...(floatingId && { id: floatingId }),
           })}
         />
@@ -80,13 +80,13 @@ function AppWithExternalRef(props: UseRoleOptions & { initiallyOpen?: boolean })
   // External ref can use its own set of interactions hooks, but share context
   const floatingRole = useRole(floatingState.context, roleProps);
   const referenceRole = useRole(floatingState.context, roleProps);
-  const floatingInteractions = useInteractions([floatingRole]);
-  const referenceInteractions = useInteractions([referenceRole]);
+  const floatingInteractions = createMemo(() => useInteractions([floatingRole()]));
+  const referenceInteractions = createMemo(() => useInteractions([referenceRole()]));
 
   return (
     <>
       <button
-        {...referenceInteractions.getReferenceProps({
+        {...referenceInteractions().getReferenceProps({
           ref: setReference,
           onClick() {
             setOpen(!open());
@@ -95,7 +95,7 @@ function AppWithExternalRef(props: UseRoleOptions & { initiallyOpen?: boolean })
       />
       {open() && (
         <div
-          {...floatingInteractions.getFloatingProps({
+          {...floatingInteractions().getFloatingProps({
             ref: setFloating,
           })}
         />
@@ -263,17 +263,17 @@ describe('select', () => {
 
       const click = useClick(floatingState.context, {});
       const role = useRole(floatingState.context, { role: 'select' });
-      const interactions = useInteractions([click(), role]);
+      const interactions = createMemo(() => useInteractions([click(), role()]));
 
       return (
         <>
-          <button ref={setReference} {...interactions.getReferenceProps()} />
+          <button ref={setReference} {...interactions().getReferenceProps()} />
           {isOpen() && (
-            <div ref={setFloating} {...interactions.getFloatingProps()}>
+            <div ref={setFloating} {...interactions().getFloatingProps()}>
               {[1, 2, 3].map((i) => (
                 <div
                   data-testid={`item-${i}`}
-                  {...interactions.getItemProps({ active: i === 2, selected: i === 2 })}
+                  {...interactions().getItemProps({ active: i === 2, selected: i === 2 })}
                 />
               ))}
             </div>
@@ -332,17 +332,17 @@ describe('combobox', () => {
 
       const click = useClick(floatingState.context, {});
       const role = useRole(floatingState.context, { role: 'combobox' });
-      const interactions = useInteractions([click(), role]);
+      const interactions = createMemo(() => useInteractions([click(), role()]));
 
       return (
         <>
-          <input ref={setReference} {...interactions.getReferenceProps()} />
+          <input ref={setReference} {...interactions().getReferenceProps()} />
           {isOpen() && (
-            <div ref={setFloating} {...interactions.getFloatingProps()}>
+            <div ref={setFloating} {...interactions().getFloatingProps()}>
               {[1, 2, 3].map((i) => (
                 <div
                   data-testid={`item-${i}`}
-                  {...interactions.getItemProps({ active: i === 2, selected: i === 2 })}
+                  {...interactions().getItemProps({ active: i === 2, selected: i === 2 })}
                 />
               ))}
             </div>

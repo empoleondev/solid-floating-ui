@@ -26,7 +26,7 @@ export function UseInteraction() {
   // Correctly pass the interaction hooks to useInteractions.
   // useClick returns a function (accessor), so we call it.
   // useDismiss and useRole return objects directly.
-  const interactions = useInteractions([click(), dismiss, role]);
+  const interactions = useInteractions([click(), dismiss, role()]);
 
   const menuItems = ['Save', 'View', 'Edit', 'Delete'];
 

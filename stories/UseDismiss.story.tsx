@@ -25,7 +25,7 @@ export function UseDismiss() {
         outsidePress: true,
     });
     const role = useRole(floatingState.context, { role: 'dialog' });
-    const interactions = useInteractions([click(), dismiss, role]);
+    const interactions = useInteractions([click(), dismiss, role()]);
 
     return (
         <div style="padding: 1rem;">

@@ -23,7 +23,7 @@ export function UseClick() {
   const dismiss = useDismiss(() => floatingState.context);
   const role = useRole(floatingState.context, { role: 'dialog' });
 
-  const interactions = useInteractions([click(), dismiss, role]);
+  const interactions = useInteractions([click(), dismiss, role()]);
 
   return (
     <div style="padding: 1rem;">
